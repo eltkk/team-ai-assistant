@@ -20,9 +20,13 @@ export function AnswerCard({ answer, isLoading, error, onRetry }: AnswerCardProp
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(answer)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(answer)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard unavailable (non-secure context, permission denied, etc.)
+    }
   }
 
   if (isLoading && !answer) {
@@ -40,11 +44,16 @@ export function AnswerCard({ answer, isLoading, error, onRetry }: AnswerCardProp
 
   if (error) {
     return (
-      <Card className="border-destructive/50 bg-destructive/10">
+      <Card className="border-destructive/50 bg-destructive/10 animate-fade-in">
         <CardContent className="flex items-start justify-between gap-4 pt-2">
-          <p className="text-sm text-destructive-foreground">{error}</p>
+          <p className="text-sm text-foreground">{error}</p>
           {onRetry && (
-            <Button variant="outline" size="sm" onClick={onRetry} className="shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRetry}
+              className="shrink-0 transition-all duration-150"
+            >
               <RefreshCw className="size-3.5" />
               Retry
             </Button>
@@ -59,7 +68,7 @@ export function AnswerCard({ answer, isLoading, error, onRetry }: AnswerCardProp
   return (
     <Card className="animate-fade-in">
       <CardContent className="pt-2">
-        <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-center justify-between gap-2 mb-3">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Answer
           </span>
@@ -71,7 +80,7 @@ export function AnswerCard({ answer, isLoading, error, onRetry }: AnswerCardProp
           >
             {copied ? (
               <>
-                <CheckCheck className="size-3.5 text-green-500 transition-transform duration-150 scale-110" />
+                <CheckCheck className="size-3.5 text-green-500" />
                 Copied
               </>
             ) : (

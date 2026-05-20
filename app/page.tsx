@@ -8,6 +8,8 @@ import { HistoryList } from "@/components/HistoryList"
 import { saveToHistory } from "@/lib/storage"
 import type { Message } from "@/types"
 
+const ERROR_MARKER = "\x00JSON:"
+
 export default function Home() {
   const [question, setQuestion] = useState("")
   const [answer, setAnswer] = useState("")
@@ -33,7 +35,7 @@ export default function Home() {
 
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error ?? `Server error ${res.status}`)
+        throw new Error((data as { error?: string }).error ?? `Server error ${res.status}`)
       }
 
       const reader = res.body.getReader()
@@ -46,17 +48,18 @@ export default function Home() {
 
         const chunk = decoder.decode(value, { stream: true })
 
-        // detect in-stream error marker: \x00JSON:{...}
-        const markerIdx = chunk.indexOf("\x00JSON:")
+        // Detect in-stream error marker written by the API route on failure
+        const markerIdx = chunk.indexOf(ERROR_MARKER)
         if (markerIdx !== -1) {
-          const jsonStr = chunk.slice(markerIdx + 6)
+          const jsonStr = chunk.slice(markerIdx + ERROR_MARKER.length)
+          let errMsg = "Something went wrong"
           try {
-            const errData = JSON.parse(jsonStr)
-            throw new Error(errData.error ?? "Unknown error")
-          } catch (parseErr) {
-            if (parseErr instanceof SyntaxError) throw new Error("Unknown error")
-            throw parseErr
+            const errData = JSON.parse(jsonStr) as { error?: string }
+            errMsg = errData.error ?? errMsg
+          } catch {
+            // malformed error payload — use generic message
           }
+          throw new Error(errMsg)
         }
 
         accumulated += chunk
@@ -81,7 +84,6 @@ export default function Home() {
   }, [isLoading])
 
   function handleSubmit(q: string) {
-    setQuestion(q)
     submit(q)
   }
 
@@ -105,7 +107,7 @@ export default function Home() {
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_280px]">
-          {/* left column */}
+          {/* left column: form + answer */}
           <div className="flex flex-col gap-6">
             <QuestionForm
               value={question}
@@ -126,7 +128,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* right column */}
+          {/* right column: history */}
           <aside className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Recent questions

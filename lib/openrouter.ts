@@ -23,6 +23,8 @@ export async function streamAnswer(
       headers: {
         Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/eltkk/team-ai-assistant",
+        "X-Title": "Team AI Assistant",
       },
       body: JSON.stringify({
         model: MODEL,
@@ -55,12 +57,18 @@ export async function streamAnswer(
   }
 
   const decoder = new TextDecoder()
+  // Buffer incomplete lines that span chunk boundaries
+  let leftover = ""
 
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
 
-    const lines = decoder.decode(value, { stream: true }).split("\n")
+    const text = leftover + decoder.decode(value, { stream: true })
+    const lines = text.split("\n")
+    // Last element may be an incomplete line — hold it for the next chunk
+    leftover = lines.pop() ?? ""
+
     for (const line of lines) {
       if (!line.startsWith("data: ")) continue
       const data = line.slice(6).trim()

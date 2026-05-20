@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect, KeyboardEvent } from "react"
+import { useRef, useEffect, useState, KeyboardEvent } from "react"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -14,6 +14,12 @@ interface QuestionFormProps {
 
 export function QuestionForm({ onSubmit, isLoading, value, onChange }: QuestionFormProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // Detect platform after mount to avoid SSR/hydration mismatch
+  const [isMac, setIsMac] = useState(false)
+
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().includes("MAC"))
+  }, [])
 
   useEffect(() => {
     const el = textareaRef.current
@@ -50,14 +56,18 @@ export function QuestionForm({ onSubmit, isLoading, value, onChange }: QuestionF
           "placeholder:text-muted-foreground",
           "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          "min-h-[80px] max-h-[320px] overflow-y-auto"
+          "min-h-[80px] max-h-[320px] overflow-y-auto transition-[border-color,box-shadow] duration-150"
         )}
       />
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {navigator?.platform?.includes("Mac") ? "⌘" : "Ctrl"}+Enter to submit
+        <span className="text-xs text-muted-foreground select-none">
+          {isMac ? "⌘" : "Ctrl"}+Enter to submit
         </span>
-        <Button onClick={handleSubmit} disabled={isLoading || !value.trim()}>
+        <Button
+          onClick={handleSubmit}
+          disabled={isLoading || !value.trim()}
+          className="transition-all duration-150"
+        >
           {isLoading ? (
             <>
               <Loader2 className="size-4 animate-spin" />
