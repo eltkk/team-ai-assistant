@@ -57,16 +57,21 @@ export function AnswerCard({ answer, isLoading, error, onRetry }: AnswerCardProp
   if (!answer) return null
 
   return (
-    <Card>
+    <Card className="animate-fade-in">
       <CardContent className="pt-2">
         <div className="flex items-start justify-between gap-2 mb-3">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Answer
           </span>
-          <Button variant="ghost" size="sm" onClick={handleCopy} className="h-7 px-2 text-xs">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            className="h-7 px-2 text-xs transition-all duration-150"
+          >
             {copied ? (
               <>
-                <CheckCheck className="size-3.5 text-green-500" />
+                <CheckCheck className="size-3.5 text-green-500 transition-transform duration-150 scale-110" />
                 Copied
               </>
             ) : (
@@ -77,7 +82,7 @@ export function AnswerCard({ answer, isLoading, error, onRetry }: AnswerCardProp
             )}
           </Button>
         </div>
-        <div className="prose prose-sm prose-invert max-w-none [&_pre]:rounded-md [&_pre]:p-4 [&_pre]:overflow-x-auto [&_code]:text-sm">
+        <div className="prose max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
             {answer}
           </ReactMarkdown>
